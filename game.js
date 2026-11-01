@@ -269,8 +269,8 @@ if (typeof document !== "undefined") {
     content.replaceChildren();
     if (game.mode === "upgrade") {
       $("dialog-tag").textContent = `第 ${game.level + 1} 次成长`;
-      $("dialog-title").textContent = "给下一次反弹，加点惊喜。";
-      $("dialog-description").textContent = "三选一，立即生效。球和计时已经暂停，不用着急。";
+      $("dialog-title").textContent = "选择升级";
+      $("dialog-description").textContent = "三选一 · 游戏已暂停";
       const cards = document.createElement("div");
       cards.className = "upgrade-cards";
       game.choices.forEach((id, index) => {
@@ -281,13 +281,13 @@ if (typeof document !== "undefined") {
       });
       content.append(cards);
     } else if (game.mode === "paused") {
-      $("dialog-tag").textContent = "休息一下";
-      $("dialog-title").textContent = "球在这里，等你回来。";
-      $("dialog-description").textContent = "积分、球和剩余时间都已保留。";
+      $("dialog-tag").textContent = "暂停";
+      $("dialog-title").textContent = "游戏已暂停";
+      $("dialog-description").textContent = "空格 / Esc 继续";
       content.append(actionButton("继续游戏", () => { game.togglePause(); syncUI(); }));
     } else if (game.mode === "restart") {
       $("dialog-tag").textContent = "重新开始";
-      $("dialog-title").textContent = "从第一颗球，再来一轮？";
+      $("dialog-title").textContent = "确认重新开始？";
       $("dialog-description").textContent = "这会清空本轮积分、升级和计时。";
       const actions = document.createElement("div");
       actions.className = "dialog-actions";
@@ -296,8 +296,8 @@ if (typeof document !== "undefined") {
       content.append(actions);
     } else if (game.mode === "finished") {
       $("dialog-tag").textContent = "20 分钟 · 本轮完成";
-      $("dialog-title").textContent = "从一次反弹，到这么多收获。";
-      $("dialog-description").textContent = "本轮已经结束。歇一会儿，或者开启下一轮。";
+      $("dialog-title").textContent = "本轮完成";
+      $("dialog-description").textContent = "本轮数据";
       const results = document.createElement("div");
       results.className = "results";
       results.innerHTML = `<div><span>累计积分</span><strong>${formatScore(game.score)}</strong></div><div><span>获得升级</span><strong>${game.level}</strong></div><div><span>球的数量</span><strong>${game.balls.length}</strong></div>`;
@@ -315,44 +315,74 @@ if (typeof document !== "undefined") {
 
   function draw() {
     const c = CONFIG;
-    ctx.fillStyle = "#14273d";
+    ctx.fillStyle = "#050505";
     ctx.fillRect(0, 0, c.width, c.height);
-    // 稀疏定位点衬托球路，避免花纹盖过游戏。
-    ctx.fillStyle = "#294056";
-    for (let x = 30; x < c.width; x += 30) for (let y = 30; y < c.height; y += 30) ctx.fillRect(x, y, 1, 1);
-    ctx.strokeStyle = "#779fb6";
-    ctx.lineWidth = 3;
-    ctx.beginPath(); ctx.moveTo(2, c.height - 2); ctx.lineTo(2, 2); ctx.lineTo(c.width - 2, 2); ctx.lineTo(c.width - 2, c.height - 2); ctx.stroke();
-    ctx.strokeStyle = "#435870";
-    ctx.setLineDash([5, 7]); ctx.beginPath(); ctx.moveTo(10, c.height - 3); ctx.lineTo(c.width - 10, c.height - 3); ctx.stroke(); ctx.setLineDash([]);
-    ctx.font = "11px 'Microsoft YaHei', sans-serif";
-    ctx.textAlign = "center"; ctx.fillStyle = "#9fbcd0";
-    ctx.fillText(`墙壁 ×${game.wallMultiplier}`, c.width / 2, 28);
-    ctx.fillStyle = "#758da4"; ctx.fillText(`底边 ×${c.bottomMultiplier} · 漏球也有收获`, c.width / 2, c.height - 14);
+
+    // 护栏只改变绘制，碰撞位置、球速和角度沿用原来的物理核心。
+    ctx.fillStyle = "#393835";
+    ctx.fillRect(0, 0, c.width, 10);
+    ctx.fillRect(0, 0, 10, c.height);
+    ctx.fillRect(c.width - 10, 0, 10, c.height);
+    ctx.fillStyle = "#b9b5ac";
+    ctx.fillRect(12, 3, c.width - 24, 4);
+    ctx.fillRect(3, 12, 4, c.height - 24);
+    ctx.fillRect(c.width - 7, 12, 4, c.height - 24);
+    ctx.fillStyle = "#f2f0ec";
+    ctx.fillRect(12, 8, c.width - 24, 1);
+    ctx.fillRect(8, 12, 1, c.height - 24);
+    ctx.fillRect(c.width - 9, 12, 1, c.height - 24);
+
+    // 底边的金色分段缓冲带与三面银灰护栏明显区分。
+    ctx.fillStyle = "#30291d";
+    ctx.fillRect(0, c.height - 11, c.width, 11);
+    ctx.fillStyle = "#d6ad65";
+    ctx.fillRect(12, c.height - 10, c.width - 24, 2);
+    for (let x = 18; x < c.width - 18; x += 28) {
+      ctx.fillRect(x, c.height - 6, 16, 3);
+    }
+    ctx.fillStyle = "#56534d";
+    for (const [x, y] of [[0, 0], [c.width - 16, 0], [0, c.height - 16], [c.width - 16, c.height - 16]]) {
+      ctx.fillRect(x, y, 16, 16);
+      ctx.fillStyle = "#c4bfb5";
+      ctx.fillRect(x + 5, y + 5, 6, 6);
+      ctx.fillStyle = "#56534d";
+    }
+    if (!reducedMotion) for (const effect of game.effects) {
+      if (effect.surface !== "wall" && effect.surface !== "bottom") continue;
+      ctx.globalAlpha = Math.max(0, effect.life / c.effectSeconds - 0.5) * 1.6;
+      ctx.fillStyle = effect.surface === "bottom" ? "#ffe0a0" : "#ffffff";
+      if (effect.x === 0 || effect.x === c.width) {
+        ctx.fillRect(effect.x === 0 ? 0 : c.width - 10, clamp(effect.y - 32, 16, c.height - 80), 10, 64);
+      } else {
+        ctx.fillRect(clamp(effect.x - 32, 16, c.width - 80), effect.y === 0 ? 0 : c.height - 11, 64, 10);
+      }
+    }
+    ctx.globalAlpha = 1;
 
     for (const ball of game.balls) {
       if (!reducedMotion) {
         for (let i = 0; i < ball.trail.length; i++) {
           ctx.globalAlpha = (i + 1) / ball.trail.length * 0.16;
-          ctx.fillStyle = "#bde5f4";
+          ctx.fillStyle = "#e8e5de";
           ctx.beginPath(); ctx.arc(ball.trail[i].x, ball.trail[i].y, ball.radius * (i + 1) / ball.trail.length, 0, Math.PI * 2); ctx.fill();
         }
       }
       ctx.globalAlpha = 1;
-      ctx.fillStyle = ball.flash > 0.12 ? "#ffad94" : "#e2f5ff";
+      ctx.fillStyle = ball.flash > 0.12 ? "#ffad94" : "#f2f0ec";
       ctx.beginPath(); ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2); ctx.fill();
       ctx.fillStyle = "#ffffff";
       ctx.beginPath(); ctx.arc(ball.x - 2, ball.y - 2, 2, 0, Math.PI * 2); ctx.fill();
     }
 
     const p = game.paddle;
-    ctx.fillStyle = "#b5cbdc";
+    ctx.fillStyle = "#d9d6cf";
     ctx.fillRect(p.x - p.width / 2, p.y, p.width, c.paddleHeight);
     ctx.fillStyle = "#ff816b";
     ctx.fillRect(p.x - p.width * c.centerRatio / 2, p.y, p.width * c.centerRatio, c.paddleHeight);
-    ctx.fillStyle = "#19334b";
+    ctx.fillStyle = "#30241f";
     ctx.fillRect(p.x - 1, p.y + 4, 2, 6);
     ctx.font = "10px 'Consolas', monospace"; ctx.fillStyle = "#efb0a0";
+    ctx.textAlign = "center";
     ctx.fillText(`×${game.centerMultiplier}`, p.x, p.y - 10);
 
     for (const effect of game.effects) {
@@ -361,7 +391,7 @@ if (typeof document !== "undefined") {
       const x = clamp(effect.x, 40, c.width - 40);
       const y = clamp(effect.y, 45, c.height - 24) - (reducedMotion ? 0 : (1 - fraction) * 25);
       ctx.globalAlpha = Math.min(1, fraction * 3);
-      ctx.fillStyle = central ? "#ffab94" : "#bde5f4";
+      ctx.fillStyle = central ? "#ffab94" : effect.surface === "bottom" ? "#e5c48a" : "#e8e5de";
       ctx.textAlign = "center";
       ctx.font = `${central ? "bold 23" : "15"}px 'Consolas', monospace`;
       ctx.fillText(`+${formatScore(effect.points)}`, x, y);
