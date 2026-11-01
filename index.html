@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#14273d">
+  <meta name="description" content="操作挡板，接住高分。一个没有漏球惩罚的二维弹球积分小游戏。">
+  <title>二维弹球 · v0.1</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%2314273d'/%3E%3Ccircle cx='32' cy='23' r='9' fill='%23bde5f4'/%3E%3Crect x='13' y='44' width='38' height='7' rx='3' fill='%23ff816b'/%3E%3C/svg%3E">
+</head>
+<body>
+  <main class="app">
+    <header class="topbar">
+      <div class="brand"><span class="brand-mark" aria-hidden="true">●<i></i></span><h1>二维弹球</h1><span class="version">v0.1 · 试玩版</span></div>
+      <span class="header-note">把每一次反弹，变成下一次成长。</span>
+      <div class="controls"><button id="pause" type="button">暂停 <kbd>空格</kbd></button><button id="restart" class="quiet" type="button">重新开始</button></div>
+    </header>
+
+    <div class="game-layout">
+      <section class="play-section" aria-label="弹球游戏">
+        <div class="field-heading"><span><i class="status-dot"></i><span id="status">正在运行</span></span><span>漏球也会反弹 · 没有生命限制</span></div>
+        <div class="field-wrap" id="field-wrap">
+          <canvas id="field" width="900" height="620" tabindex="0" aria-label="弹球场地。鼠标左右移动，或使用 A、D 和左右方向键操纵底部挡板。"></canvas>
+          <div class="overlay" id="overlay" hidden>
+            <section class="dialog" role="dialog" aria-modal="true" aria-labelledby="dialog-title" tabindex="-1">
+              <span class="dialog-tag" id="dialog-tag"></span>
+              <h2 id="dialog-title"></h2>
+              <p id="dialog-description"></p>
+              <div id="dialog-content"></div>
+            </section>
+          </div>
+        </div>
+        <div class="field-footer"><span><span class="key-group"><kbd>←</kbd><kbd>→</kbd></span> 或 <span class="key-group"><kbd>A</kbd><kbd>D</kbd></span> 移动挡板</span><span>也可以直接移动鼠标</span><span class="central-hint"><i></i> 对准中央，接住高分</span></div>
+      </section>
+
+      <aside class="dashboard" aria-label="本轮数据">
+        <div class="score-panel"><span class="label">累计积分</span><strong id="score">0</strong><span class="score-caption">每一次碰撞，都算数。</span></div>
+        <section class="growth-panel"><div class="section-label"><h2>下一次成长</h2><span id="level">已升级 0 次</span></div><div class="growth-numbers"><strong id="remaining">还差 20</strong><span id="threshold">目标 20</span></div><div class="progress" role="progressbar" aria-label="升级进度" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><i id="progress-fill"></i></div><p>攒够积分，暂停选一项升级。<br>分数保留，升级可以重复叠加。</p></section>
+        <section class="stats-panel"><div class="section-label"><h2>当前配置</h2><span id="ball-count">1 颗球</span></div><div class="multiplier-row"><span><i class="legend-dot wall"></i>上 / 左 / 右墙</span><strong id="wall-value">×2</strong></div><div class="multiplier-row"><span><i class="legend-dot edge"></i>挡板两端</span><strong id="edge-value">×5</strong></div><div class="multiplier-row featured"><span><i class="legend-dot center"></i>挡板中央</span><strong id="center-value">×10</strong></div><div class="multiplier-row"><span><i class="legend-dot bottom"></i>底边</span><strong id="bottom-value">×1</strong></div><div class="paddle-length"><span>挡板长度</span><span id="paddle-value">144</span></div></section>
+        <section class="round-panel"><div><span class="label">本轮剩余</span><strong id="timer">20:00</strong></div><span class="round-note">20 分钟一轮<br>暂停时不计时</span></section>
+        <p class="aside-note">认真接球，赚得更快。<br>歇一会儿，也有收获。</p>
+      </aside>
+    </div>
+    <footer class="page-footer"><span>一个小小的弹球实验。正式名称还没想好。</span><span>无需安装 · 无存档 · 刷新后重新开始</span></footer>
+  </main>
+  <script src="game.js"></script>
+</body>
+</html>
